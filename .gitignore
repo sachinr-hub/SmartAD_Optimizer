@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+
+# Environments
+.env
+.env.*
+venv/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Streamlit cache
+.streamlit/
+
+# Data artifacts (optional to track)
+# If you want to keep sample/synthetic small files, add exceptions like !data/sample_*.csv
+data/*.csv
+data/*.json
+# Keep audit log out of VCS
+data/audit_log.json
+
+# Model training outputs
+results/
+
+# Models and scalers (tracked via Git LFS if needed)
+models/
+
+# Logs and reports
+logs/
+*.log
+**/report_*.json
+**/evaluation_*.json
+
+# Jupyter/Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# System files
+Thumbs.db

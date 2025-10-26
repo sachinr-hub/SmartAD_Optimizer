@@ -1,0 +1,55 @@
+{
+  "system": {
+    "app_name": "SmartAd Optimizer",
+    "version": "1.0.0",
+    "environment": "production",
+    "debug_mode": false,
+    "max_users": 1000,
+    "session_timeout": 3600
+  },
+  "machine_learning": {
+    "ctr_model": {
+      "architecture": "1D_CNN",
+      "epochs": 50,
+      "batch_size": 32,
+      "learning_rate": 0.001,
+      "validation_split": 0.2,
+      "early_stopping_patience": 10
+    },
+    "reinforcement_learning": {
+      "algorithm": "thompson_sampling",
+      "exploration_rate": 0.1,
+      "reward_normalization": {
+        "min_reward": -100,
+        "max_reward": 100,
+        "ctr_baseline": 0.5
+      }
+    }
+  },
+  "database": {
+    "type": "mongodb",
+    "fallback": "json",
+    "backup_frequency": "daily",
+    "retention_days": 90
+  },
+  "security": {
+    "password_min_length": 8,
+    "require_uppercase": true,
+    "require_lowercase": true,
+    "require_numbers": true,
+    "session_security": true,
+    "admin_approval_required": false
+  },
+  "ui": {
+    "theme": "light",
+    "sidebar_default_expanded": true,
+    "show_advanced_options": false,
+    "max_file_upload_size": "10MB"
+  },
+  "logging": {
+    "level": "INFO",
+    "log_to_file": true,
+    "log_file_path": "logs/system.log",
+    "audit_logging": true
+  }
+}

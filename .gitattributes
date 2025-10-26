@@ -1,0 +1,35 @@
+# Normalize line endings across platforms
+* text=auto
+
+# Explicit EOL preferences for common text files (stored as LF in repo)
+*.py   text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.json text eol=lf
+*.csv  text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.ipynb text eol=lf
+
+# Windows scripts keep CRLF on checkout
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary files
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.bmp  binary
+*.webp binary
+*.svg  text eol=lf
+*.ico  binary
+*.tiff binary
+*.heic binary
+*.heif binary
+
+# Model and pickle artifacts
+*.keras binary
+*.h5    binary
+*.pkl   binary
