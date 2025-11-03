@@ -15,14 +15,14 @@ import shutil
 
 # Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from user_auth import require_authentication
+from user_auth import require_authentication_login_only
 from database import db_auth
 from audit_logger import audit_logger, log_admin_action, log_config_action
 
 # ------------------- ADMIN AUTHENTICATION -------------------
 def require_admin_authentication():
     """Check if user is authenticated and has admin privileges"""
-    if not require_authentication():
+    if not require_authentication_login_only():
         return False
     
     # Check if user has admin role

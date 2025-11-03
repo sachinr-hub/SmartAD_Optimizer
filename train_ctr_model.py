@@ -3,12 +3,13 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropout, BatchNormalization, Input
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.optimizers.schedules import CosineDecay
+from tensorflow.keras.optimizers.schedules import CosineDecayRestarts
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import os
 
 # Load the preprocessed data
 data = pd.read_csv("data/dl_data.csv")
@@ -26,7 +27,7 @@ model_input_columns = pd.read_csv("data/model_input_columns.csv").columns.tolist
 X = X[model_input_columns]  # Ensure X has the correct columns in the correct order
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X.to_numpy(dtype=np.float64), y.to_numpy(dtype=np.float64), test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X.to_numpy(dtype=np.float32), y.to_numpy(dtype=np.float32), test_size=0.2, random_state=42)
 
 # ========== CLASS WEIGHTING FOR IMBALANCED DATA ========== 
 # Convert CTR to binary (click/no-click) for class weighting
@@ -52,8 +53,8 @@ X_test_reshaped = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
 # ========== SIMPLIFIED CNN ARCHITECTURE ========== 
 # Simpler architecture to prevent overfitting on sparse interaction features
 model = Sequential([
-    # Single Conv Block
-    Conv1D(filters=32, kernel_size=3, activation='relu', input_shape=(X_train.shape[1], 1)),
+    Input(shape=(X_train.shape[1], 1)),
+    Conv1D(filters=32, kernel_size=3, activation='relu'),
     BatchNormalization(),
     MaxPooling1D(pool_size=2),
     
@@ -66,8 +67,16 @@ model = Sequential([
 ])
 
 # Compile with standard MSE and better metrics
+initial_lr = 1e-3
+use_cosine_restarts = True
+if use_cosine_restarts:
+    lr_schedule = CosineDecayRestarts(initial_lr, first_decay_steps=1000, t_mul=2.0, m_mul=0.7)
+    optimizer = Adam(learning_rate=lr_schedule)
+else:
+    optimizer = Adam(learning_rate=initial_lr)
+
 model.compile(
-    optimizer=Adam(learning_rate=0.001),  # Fixed learning rate
+    optimizer=optimizer,
     loss='mse',  # Standard MSE for regression
     metrics=['mae', tf.keras.metrics.AUC(name='auc')]
 )
@@ -80,13 +89,14 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 early_stop = EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True, verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-6, verbose=1)
+callbacks = [early_stop] if use_cosine_restarts else [early_stop, reduce_lr]
 
 history = model.fit(
     X_train_reshaped, y_train,
     epochs=100,
     batch_size=64,  # Larger batch size for stability
     validation_split=0.2,
-    callbacks=[early_stop, reduce_lr],
+    callbacks=callbacks,
     verbose=1
 )
 
@@ -99,16 +109,25 @@ auc = eval_results[2]
 print(f"\nTest Loss: {loss}, Test MAE: {mae}, Test AUC: {auc}")
 
 # Predict CTR on the test set
-y_pred = model.predict(X_test_reshaped)
+y_pred = model.predict(X_test_reshaped).ravel()
 
 # Calculate and print metrics
 mse = mean_squared_error(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
+# Baseline: predict mean of training CTR
+baseline_pred = np.full_like(y_test, fill_value=float(np.mean(y_train)))
+baseline_mae = mean_absolute_error(y_test, baseline_pred)
+
 print(f"MSE: {mse}")
 print(f"MAE: {mae}")
 print(f"R²: {r2}")
+print(f"Baseline MAE (predict mean CTR): {baseline_mae}")
+
+# Ensure output directories exist
+os.makedirs("results", exist_ok=True)
+os.makedirs("models", exist_ok=True)
 
 # Plot Actual vs. Predicted CTR
 plt.figure(figsize=(8, 6))
@@ -145,4 +164,4 @@ print("Training history plot saved to results/training_history.png")
 # Save the trained model
 model.save("models/ctr_prediction_model.keras")   # new recommended format
 
-print("Trained CTR prediction model saved to models/ctr_prediction_model.h5")
+print("Trained CTR prediction model saved to models/ctr_prediction_model.keras")

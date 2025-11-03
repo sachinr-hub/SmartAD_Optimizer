@@ -196,3 +196,30 @@ def require_authentication():
         return False
     
     return True
+
+def require_authentication_login_only():
+    """Authentication guard that only shows Login (no registration UI). For admin dashboard use."""
+    if 'logged_in' not in st.session_state or not st.session_state.logged_in:
+        # Ensure registration UI is not shown
+        if 'show_registration' in st.session_state:
+            try:
+                del st.session_state['show_registration']
+            except Exception:
+                pass
+        # Show only login page
+        show_login_page()
+        return False
+
+    # User is authenticated, show profile in sidebar
+    show_user_profile()
+
+    # Handle profile edit/password change
+    if st.session_state.get('show_profile_edit', False):
+        show_profile_edit()
+        return False
+
+    if st.session_state.get('show_password_change', False):
+        show_password_change()
+        return False
+
+    return True
